@@ -320,5 +320,5 @@ $
 
 ## Authors ##
 
-👤 **Franklin Ngueiwoh**
-👤 **Eddy-Mark Ngalle**
+👤 **Josh- Cozy619**
+👤 **Lola-boye**
