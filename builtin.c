@@ -1,5 +1,5 @@
 #include "shell.h"
-
+/*Delete this*/
 /**
  * _myexit - exits the shell
  * @info: Structure containiing potential arguments. Used to maintain
