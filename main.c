@@ -1,44 +1,74 @@
 #include "shell.h"
 
 /**
- * main - entry point
- * @ac: arg count
- * @av: arg vector
- *
- * Return: 0 on success, 1 on error
- */
-int main(int ac, char **av)
+* INThandler - handles signals and write the prompt
+*@sig: signal to handle
+*Return: Nothing (void)
+*/
+
+void INThandler(int sig)
 {
-	info_t info[] = { INFO_INIT };
-	int fd = 2;
+	(void)sig;
+	write(STDOUT_FILENO, "\n$ ", 3);
+}
 
-	asm ("mov %1, %0\n\t"
-		"add $3, %0"
-		: "=r" (fd)
-		: "r" (fd));
+/**
+* print_dollar - Function to print the dollar sign
+*Return: Nothing(void)
+*/
 
-	if (ac == 2)
+void print_dollar(void)
+{
+	if (isatty(STDIN_FILENO))
+		write(STDOUT_FILENO, "$ ", 2);
+}
+
+/**
+* main - principal function to run the shell
+*@argc: argument count
+*@argv: argument vector
+*@env: enviroment variables
+*Return: 0 on exit, 1 if any failures happen
+*/
+
+int main(int argc, char **argv, char **env)
+{
+	char *buffer, **commands;
+	size_t length;
+	ssize_t characters;
+	pid_t pid;
+	int status, count;
+	(void)argc;
+	buffer = NULL, length = 0, count = 0;
+	/*write promt only if it's from standard input*/
+	print_dollar();
+	/*infinite loop*/
+	while ((characters = getline(&buffer, &length, stdin)))
 	{
-		fd = open(av[1], O_RDONLY);
-		if (fd == -1)
+		/*signal kill for contro+c */
+		signal(SIGINT, INThandler);
+		/*check the end of file*/
+		if (characters == EOF)
+			end_file(buffer);
+		count++;
+		/*collect commands from the prompt and store in double pointer*/
+		commands = array_strtok(buffer);
+		/*create new process*/
+		pid = fork();
+		if (pid == -1)
+			fork_fail();
+		if (pid == 0)
+			execute(commands, buffer, env, argv, count);
+		/*free everithing*/
+		else
 		{
-			if (errno == EACCES)
-				exit(126);
-			if (errno == ENOENT)
-			{
-				_eputs(av[0]);
-				_eputs(": 0: Can't open ");
-				_eputs(av[1]);
-				_eputchar('\n');
-				_eputchar(BUF_FLUSH);
-				exit(127);
-			}
-			return (EXIT_FAILURE);
+			wait(&status);
+			send_to_free(buffer, commands);
 		}
-		info->readfd = fd;
+		length = 0, buffer = NULL; /*reset for getline*/
+		print_dollar();
 	}
-	populate_env_list(info);
-	read_history(info);
-	hsh(info, av);
-	return (EXIT_SUCCESS);
+	if (characters == -1)
+		return (EXIT_FAILURE);
+		return (EXIT_SUCCESS);
 }
