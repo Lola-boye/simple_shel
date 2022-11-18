@@ -1,5 +1,5 @@
 #include "shell.h"
-/*Delete this*/
+
 /**
  * _myenv - prints the current environment
  * @info: Structure containiing potential arguments. Used to maintain
